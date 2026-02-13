@@ -37,6 +37,7 @@ jobs:
               - "packages/**"
               - "services/indexer/**"
               - "package.json"
+              - "pnpm-lock.yaml"
               - "pnpm-workspace.yaml"
               - "turbo.json"
               - "Makefile"
@@ -46,6 +47,7 @@ jobs:
             go:
               - "services/**/*.go"
               - "services/**/go.mod"
+              - "services/**/go.sum"
               - "tooling/dev/run-go-tests.sh"
               - "Makefile"
               - ".github/workflows/ci.yml"
@@ -56,11 +58,27 @@ jobs:
               - ".github/workflows/ci.yml"
 
   js-ts:
-    name: JS/TS
+    name: JS/TS (${{ matrix.task.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: changes
     if: needs.changes.outputs.js == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - name: Lint
+            id: lint
+            cmd: make lint
+          - name: Typecheck
+            id: typecheck
+            cmd: make typecheck
+          - name: Test
+            id: test
+            cmd: make test
+          - name: Smoke
+            id: smoke
+            cmd: pnpm smoke
     steps:
       - uses: actions/checkout@v4
 
@@ -74,38 +92,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
-      - name: Resolve pnpm store path
-        id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('package.json', 'pnpm-workspace.yaml', 'turbo.json', 'apps/**/package.json', 'packages/**/package.json', 'services/indexer/package.json', 'edge/workers/**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Cache Turborepo
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.ref_name }}-${{ hashFiles('turbo.json', 'package.json', 'apps/**/package.json', 'packages/**/package.json', 'services/indexer/package.json', 'edge/workers/**/package.json') }}
+          key: ${{ runner.os }}-turbo-${{ matrix.task.id }}-${{ github.ref_name }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-turbo-${{ github.ref_name }}-
-            ${{ runner.os }}-turbo-
+            ${{ runner.os }}-turbo-${{ matrix.task.id }}-${{ github.ref_name }}-
+            ${{ runner.os }}-turbo-${{ matrix.task.id }}-
 
       - name: Install deps
-        run: pnpm install --prefer-offline --no-frozen-lockfile
-      - name: Lint
-        run: make lint
-      - name: Typecheck
-        run: make typecheck
-      - name: Test
-        run: make test
-      - name: Smoke
-        run: pnpm smoke
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Run ${{ matrix.task.name }}
+        run: ${{ matrix.task.cmd }}
 
   go:
     name: Go
@@ -153,3 +155,40 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
       - name: Rust tests
         run: ./tooling/dev/run-rust-tests.sh
+
+  required:
+    name: Required CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - changes
+      - js-ts
+      - go
+      - rust
+    steps:
+      - name: Enforce required checks
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          JS_RESULT: ${{ needs['js-ts'].result }}
+          GO_RESULT: ${{ needs.go.result }}
+          RUST_RESULT: ${{ needs.rust.result }}
+        run: |
+          echo "changes: $CHANGES_RESULT"
+          echo "js-ts: $JS_RESULT"
+          echo "go: $GO_RESULT"
+          echo "rust: $RUST_RESULT"
+
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "changes job must succeed"
+            exit 1
+          fi
+
+          for result in "$JS_RESULT" "$GO_RESULT" "$RUST_RESULT"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "one of the CI jobs failed or was cancelled"
+              exit 1
+            fi
+          done
+
+          echo "all required jobs passed (or were correctly skipped)"
