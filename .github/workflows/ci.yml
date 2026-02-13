@@ -5,20 +5,99 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      js: ${{ steps.filter.outputs.js }}
+      go: ${{ steps.filter.outputs.go }}
+      rust: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            js:
+              - "apps/**"
+              - "edge/workers/**"
+              - "packages/**"
+              - "services/indexer/**"
+              - "package.json"
+              - "pnpm-workspace.yaml"
+              - "turbo.json"
+              - "Makefile"
+              - "tooling/dev/smoke.sh"
+              - "tooling/dev/check-prereqs.sh"
+              - ".github/workflows/ci.yml"
+            go:
+              - "services/**/*.go"
+              - "services/**/go.mod"
+              - "tooling/dev/run-go-tests.sh"
+              - "Makefile"
+              - ".github/workflows/ci.yml"
+            rust:
+              - "services/core/**"
+              - "tooling/dev/run-rust-tests.sh"
+              - "Makefile"
+              - ".github/workflows/ci.yml"
+
   js-ts:
     name: JS/TS
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: changes
+    if: needs.changes.outputs.js == 'true'
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
-      - uses: actions/setup-node@v4
+          version: 9.15.4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('package.json', 'pnpm-workspace.yaml', 'turbo.json', 'apps/**/package.json', 'packages/**/package.json', 'services/indexer/package.json', 'edge/workers/**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.ref_name }}-${{ hashFiles('turbo.json', 'package.json', 'apps/**/package.json', 'packages/**/package.json', 'services/indexer/package.json', 'edge/workers/**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ github.ref_name }}-
+            ${{ runner.os }}-turbo-
+
       - name: Install deps
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --prefer-offline --no-frozen-lockfile
       - name: Lint
         run: make lint
       - name: Typecheck
@@ -31,20 +110,39 @@ jobs:
   go:
     name: Go
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.23.x"
+          cache: true
+          cache-dependency-path: |
+            services/**/go.mod
+            services/**/go.sum
+
       - name: Run go tests
         run: ./tooling/dev/run-go-tests.sh
 
   rust:
     name: Rust
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "services/core -> target"
+
       - name: Rust fmt
         run: |
           cd services/core
