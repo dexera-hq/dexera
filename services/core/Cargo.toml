@@ -1,0 +1,3 @@
+[workspace]
+members = ["adapters", "simulation", "tx-builder"]
+resolver = "2"

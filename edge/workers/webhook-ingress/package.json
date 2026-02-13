@@ -1,0 +1,21 @@
+{
+  "name": "@dexera/webhook-ingress",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node ./scripts/dev.mjs",
+    "build": "node ./scripts/build.mjs",
+    "lint": "node -e \"console.log('webhook-ingress lint placeholder')\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "smoke": "node ./scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

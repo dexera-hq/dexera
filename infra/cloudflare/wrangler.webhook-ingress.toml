@@ -1,0 +1,12 @@
+name = "dexera-webhook-ingress"
+main = "../../edge/workers/webhook-ingress/src/index.ts"
+compatibility_date = "2025-01-01"
+
+[env.dev]
+name = "dexera-webhook-ingress-dev"
+
+[env.staging]
+name = "dexera-webhook-ingress-staging"
+
+[env.prod]
+name = "dexera-webhook-ingress-prod"

@@ -1,0 +1,12 @@
+name = "dexera-api-gateway"
+main = "../../edge/workers/api-gateway/src/index.ts"
+compatibility_date = "2025-01-01"
+
+[env.dev]
+name = "dexera-api-gateway-dev"
+
+[env.staging]
+name = "dexera-api-gateway-staging"
+
+[env.prod]
+name = "dexera-api-gateway-prod"
