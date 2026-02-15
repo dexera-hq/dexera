@@ -11,6 +11,11 @@ Default root tasks:
 - `pnpm test`
 - `pnpm smoke`
 
+Task semantics:
+
+- `lint` runs ESLint rules.
+- `typecheck` runs TypeScript compiler checks with `--noEmit`.
+
 Affected-only tasks:
 
 - `pnpm build:changed`

@@ -7,7 +7,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "smoke": "node -e \"console.log('sdk smoke passed')\""

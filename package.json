@@ -24,6 +24,11 @@
     "docker:build": "turbo run docker:build"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@typescript-eslint/eslint-plugin": "8.55.0",
+    "@typescript-eslint/parser": "8.55.0",
+    "eslint": "9.39.2",
+    "globals": "14.0.0",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3"
   }
