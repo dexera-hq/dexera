@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "node ./scripts/dev.mjs",
-    "build": "node ./scripts/build.mjs",
-    "lint": "node -e \"console.log('api-gateway lint placeholder')\"",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "smoke": "node ./scripts/smoke.mjs"
   },

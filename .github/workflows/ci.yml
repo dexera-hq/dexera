@@ -63,24 +63,29 @@ jobs:
     timeout-minutes: 25
     needs: changes
     if: needs.changes.outputs.js == 'true'
+    env:
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
         task:
           - name: Lint
             id: lint
-            cmd: make lint
+            cmd: pnpm lint:changed
           - name: Typecheck
             id: typecheck
-            cmd: make typecheck
+            cmd: pnpm typecheck:changed
           - name: Test
             id: test
-            cmd: make test
+            cmd: pnpm test:changed
           - name: Smoke
             id: smoke
-            cmd: pnpm smoke
+            cmd: pnpm smoke:changed
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -106,6 +111,29 @@ jobs:
 
       - name: Install deps
         run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Resolve affected baseline
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          BASE_SHA="$PR_BASE_SHA"
+          if [ -z "$BASE_SHA" ]; then
+            BASE_SHA="$PUSH_BEFORE_SHA"
+          fi
+
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD~1)"
+          fi
+
+          echo "TURBO_SCM_BASE=$BASE_SHA" >> "$GITHUB_ENV"
+          echo "resolved TURBO_SCM_BASE=$BASE_SHA"
+
+      - name: Enforce remote cache configuration
+        run: |
+          test -n "${TURBO_TEAM}" || { echo "missing TURBO_TEAM"; exit 1; }
+          test -n "${TURBO_TOKEN}" || { echo "missing TURBO_TOKEN"; exit 1; }
+
       - name: Run ${{ matrix.task.name }}
         run: ${{ matrix.task.cmd }}
 

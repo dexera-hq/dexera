@@ -6,9 +6,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "build": "node -e \"console.log('shared build placeholder')\"",
-    "lint": "node -e \"console.log('shared lint placeholder')\"",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "smoke": "node -e \"console.log('shared smoke passed')\""
   },

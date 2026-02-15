@@ -4,11 +4,23 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo run build",
+    "build:changed": "turbo run build --affected",
     "dev": "turbo run dev --parallel --filter=@dexera/web --filter=@dexera/api-gateway --filter=@dexera/webhook-ingress",
+    "dev:web": "turbo run dev --parallel --filter=@dexera/web",
+    "dev:edge": "turbo run dev --parallel --filter=@dexera/api-gateway --filter=@dexera/webhook-ingress",
+    "dev:core-js": "turbo run dev --parallel --filter=@dexera/indexer --filter=@dexera/docs",
     "lint": "turbo run lint",
+    "lint:changed": "turbo run lint --affected",
     "test": "turbo run test",
+    "test:changed": "turbo run test --affected",
     "typecheck": "turbo run typecheck",
+    "typecheck:changed": "turbo run typecheck --affected",
+    "check:changed": "turbo run lint typecheck test --affected",
     "smoke": "turbo run smoke",
+    "smoke:changed": "turbo run smoke --affected",
+    "affected:list": "turbo ls --affected",
+    "tasks:dry": "turbo run build lint typecheck test --dry=json",
+    "graph:build": "turbo run build --graph=turbo-graph.html --dry",
     "docker:build": "turbo run docker:build"
   },
   "devDependencies": {

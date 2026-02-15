@@ -30,3 +30,6 @@ bin/
 
 # Logs
 *.log
+
+# Turborepo
+.turbo
