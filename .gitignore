@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 coverage/
+*.tsbuildinfo
 
 # Env
 .env
@@ -30,3 +31,6 @@ bin/
 
 # Logs
 *.log
+
+# Turborepo
+.turbo

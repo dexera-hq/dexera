@@ -1,19 +1,56 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    "packages/config/**"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**",
+        "!build/**",
+        "!.next/**",
+        "!coverage/**"
+      ],
       "outputs": ["dist/**", "build/**", ".next/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "lint": {},
+    "lint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**",
+        "!build/**",
+        "!.next/**",
+        "!coverage/**"
+      ]
+    },
     "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**",
+        "!build/**",
+        "!.next/**",
+        "!coverage/**"
+      ],
       "outputs": ["coverage/**"]
     },
-    "typecheck": {},
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**",
+        "!build/**",
+        "!.next/**",
+        "!coverage/**"
+      ]
+    },
     "smoke": {
       "cache": false
     },

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --ignore-pattern .next --ignore-pattern dist --ignore-pattern build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "smoke": "node ./scripts/smoke.mjs"

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "node ./scripts/dev.mjs",
-    "build": "tsc -p tsconfig.json",
-    "lint": "node -e \"console.log('indexer lint placeholder')\"",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit false",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "smoke": "node ./scripts/smoke.mjs"
   },
